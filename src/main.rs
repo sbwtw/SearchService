@@ -6,6 +6,7 @@ use dbus::tree::*;
 
 use std::sync::Arc;
 use std::sync::mpsc;
+use std::cell::RefCell;
 
 static SEARCH_SERVICE_INTERFACE: &'static str = "org.freedesktop.SearchService";
 static SEARCH_SERVICE_PATH: &'static str = "/org/freedesktop/SearchService";
@@ -35,13 +36,13 @@ impl Default for SearchService {
 
 #[derive(Debug)]
 struct SearchContext {
-    context: String,
+    context: RefCell<String>,
 }
 
 impl SearchContext {
     pub fn new() -> Self {
         SearchContext {
-            context: String::new(),
+            context: RefCell::new(String::new()),
         }
     }
 }
@@ -101,6 +102,23 @@ fn create_context_interface(service: Arc<SearchService>) -> tree::Interface<MTFn
     let f = tree::Factory::new_fn();
 
     f.interface(SEARCH_CONTEXT_INTERFACE, service)
+        .add_p(f.property::<String, _>("Context", ())
+            .emits_changed(EmitsChangedSignal::False)
+            .access(Access::ReadWrite)
+            .on_set(|i, m| {
+                let value: String = i.read()?;
+                let context: &Option<Arc<SearchContext>> = m.path.get_data();
+                context.as_ref().map(move |x| x.context.replace(value));
+
+                Ok(())
+            })
+            .on_get(|i, m| {
+                let context: &Option<Arc<SearchContext>> = m.path.get_data();
+                i.append(context.as_ref().map(|x| x.context.borrow().clone()).unwrap());
+
+                Ok(())
+            })
+        )
 }
 
 fn create_search_interface(service: Arc<SearchService>, path_tx: mpsc::Sender<tree::ObjectPath<MTFn<ServiceData>, ServiceData>>) -> tree::Interface<MTFn<ServiceData>, ServiceData> {
