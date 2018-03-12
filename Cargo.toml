@@ -6,3 +6,4 @@ authors = ["石博文 <sbw@sbw.so>"]
 [dependencies]
 # dbus = "*"
 dbus = { git = "https://github.com/diwic/dbus-rs" }
+pinyin = "*"

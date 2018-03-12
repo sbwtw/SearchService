@@ -134,6 +134,13 @@ fn create_context_interface(service: Arc<SearchService>) -> tree::Interface<MTFn
 
             Ok(vec![r.append1(context.as_ref().map(|x| x.read().unwrap().search_all(pattern)).unwrap())])
         }).inarg::<String, _>("pattern").outarg::<Vec<(i32, i32)>, _>("occurs"))
+        .add_m(f.method("SearchPinyin", (), |m| {
+            let pattern: &str = m.msg.read1()?;
+            let r = m.msg.method_return();
+            let context: &Option<RwLock<SearchContext>> = m.path.get_data();
+
+            Ok(vec![r.append1(context.as_ref().map(|x| x.write().unwrap().search_pinyin(pattern)).unwrap())])
+        }).inarg::<String, _>("pattern").outarg::<Vec<(i32, i32)>, _>("occurs"))
 }
 
 fn create_search_interface(service: Arc<SearchService>, path_tx: mpsc::Sender<tree::ObjectPath<MTFn<ServiceData>, ServiceData>>) -> tree::Interface<MTFn<ServiceData>, ServiceData> {
