@@ -5,8 +5,8 @@ use dbus::*;
 use dbus::tree::*;
 
 use std::sync::Arc;
+use std::sync::RwLock;
 use std::sync::mpsc;
-use std::cell::RefCell;
 
 static SEARCH_SERVICE_INTERFACE: &'static str = "org.freedesktop.SearchService";
 static SEARCH_SERVICE_PATH: &'static str = "/org/freedesktop/SearchService";
@@ -36,13 +36,13 @@ impl Default for SearchService {
 
 #[derive(Debug)]
 struct SearchContext {
-    context: RefCell<String>,
+    context: String,
 }
 
 impl SearchContext {
     pub fn new() -> Self {
         SearchContext {
-            context: RefCell::new(String::new()),
+            context: String::new(),
         }
     }
 }
@@ -51,7 +51,7 @@ impl SearchContext {
 struct ServiceData;
 impl tree::DataType for ServiceData {
     type Tree = ();
-    type ObjectPath = Option<Arc<SearchContext>>;
+    type ObjectPath = Option<RwLock<SearchContext>>;
     type Property = ();
     type Interface = Arc<SearchService>;
     type Method = ();
@@ -107,14 +107,14 @@ fn create_context_interface(service: Arc<SearchService>) -> tree::Interface<MTFn
             .access(Access::ReadWrite)
             .on_set(|i, m| {
                 let value: String = i.read()?;
-                let context: &Option<Arc<SearchContext>> = m.path.get_data();
-                context.as_ref().map(move |x| x.context.replace(value));
+                let context: &Option<RwLock<SearchContext>> = m.path.get_data();
+                context.as_ref().map(move |x| x.write().unwrap().context = value);
 
                 Ok(())
             })
             .on_get(|i, m| {
-                let context: &Option<Arc<SearchContext>> = m.path.get_data();
-                i.append(context.as_ref().map(|x| x.context.borrow().clone()).unwrap());
+                let context: &Option<RwLock<SearchContext>> = m.path.get_data();
+                i.append(context.as_ref().map(|x| x.read().unwrap().context.clone()).unwrap());
 
                 Ok(())
             })
@@ -132,7 +132,7 @@ fn create_search_interface(service: Arc<SearchService>, path_tx: mpsc::Sender<tr
             println!("{}", name);
 
             // add new context
-            let context = Arc::new(SearchContext::new());
+            let context = RwLock::new(SearchContext::new());
             let f = tree::Factory::new_fn();
             let inter = create_context_interface(service.clone());
             let path = format!("{}/{}", SEARCH_CONTEXT_PATH, name);
