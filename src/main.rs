@@ -45,6 +45,11 @@ impl SearchContext {
             context: String::new(),
         }
     }
+
+    pub fn search_all<T: AsRef<str>>(&self, pattern: T) -> Vec<(i32, i32)> {
+        println!("Searching {} ...", pattern.as_ref());
+        vec![(3, 5)]
+    }
 }
 
 #[derive(Copy, Clone, Default, Debug)]
@@ -87,7 +92,7 @@ impl<M: MethodType<D>, D: DataType> dbus::MsgHandler for MessageHandler<M, D> {
                     self.tree.insert(path);
                     msg.method_return().append1(object_path)
                 } else {
-                    msg.method_error(&MethodErr::failed(&"failed"))
+                    MethodErr::failed(&"failed").to_message(msg)
                 };
 
                 r.reply.push(msg);
@@ -119,6 +124,13 @@ fn create_context_interface(service: Arc<SearchService>) -> tree::Interface<MTFn
                 Ok(())
             })
         )
+        .add_m(f.method("SearchAll", (), |m| {
+            let pattern: &str = m.msg.read1()?;
+            let r = m.msg.method_return();
+            let context: &Option<RwLock<SearchContext>> = m.path.get_data();
+
+            Ok(vec![r.append1(context.as_ref().map(|x| x.read().unwrap().search_all(pattern)).unwrap())])
+        }).inarg::<String, _>("pattern").outarg::<Vec<(i32, i32)>, _>("occurs"))
 }
 
 fn create_search_interface(service: Arc<SearchService>, path_tx: mpsc::Sender<tree::ObjectPath<MTFn<ServiceData>, ServiceData>>) -> tree::Interface<MTFn<ServiceData>, ServiceData> {
@@ -139,8 +151,7 @@ fn create_search_interface(service: Arc<SearchService>, path_tx: mpsc::Sender<tr
             path_tx.send(f.object_path(path, Some(context)).introspectable().add(inter)).unwrap();
 
             Ok(vec![])
-        }).inarg::<&str, _>("context").outarg::<&Path, _>("path")
-        )
+        }).inarg::<String, _>("context").outarg::<Path, _>("path"))
 }
 
 fn main() {

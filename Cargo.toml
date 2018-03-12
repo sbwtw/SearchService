@@ -5,4 +5,4 @@ authors = ["石博文 <sbw@sbw.so>"]
 
 [dependencies]
 # dbus = "*"
-dbus = { path = "../dbus-rs/dbus" }
+dbus = { git = "https://github.com/diwic/dbus-rs" }
