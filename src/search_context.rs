@@ -4,7 +4,7 @@ use pinyin::*;
 use std::cmp::{Eq, PartialEq};
 
 // start, len
-struct FuzzySearchResult {
+pub struct FuzzySearchResult {
     start: i32,
     len: i32,
 }
@@ -32,6 +32,7 @@ impl PartialEq for FuzzySearchResult {
 pub struct SearchContext {
     context: String,
     pinyin_context: Vec<Vec<String>>,
+    has_pinyin: bool,
 }
 
 impl SearchContext {
@@ -39,7 +40,15 @@ impl SearchContext {
         SearchContext {
             context: String::new(),
             pinyin_context: vec![],
+            has_pinyin: false,
         }
+    }
+
+    pub fn with_context<T: AsRef<str>>(context: T) -> Self {
+        let mut r = SearchContext::new();
+        r.set_context(context);
+
+        r
     }
 
     pub fn context(&self) -> &str {
@@ -49,6 +58,7 @@ impl SearchContext {
     pub fn set_context<T: AsRef<str>>(&mut self, context: T) {
         self.context = context.as_ref().to_string();
         self.pinyin_context = pinyin(context.as_ref(), &Args::new());
+        self.has_pinyin = self.pinyin_context.iter().any(|x| !x.is_empty());
 
         println!("{}\n{:?}", self.context, self.pinyin_context);
     }
@@ -98,5 +108,14 @@ mod test {
         let r = FuzzySearchResult { start: 2, len: 3, };
 
         assert_eq!(r.to_string("abcdef"), "cde".to_owned());
+    }
+
+    #[test]
+    fn test_pinyin_is_empty() {
+        let test = SearchContext::with_context("test1");
+        assert_eq!(false, test.has_pinyin);
+
+        let test = SearchContext::with_context("test1 测试1");
+        assert_eq!(true, test.has_pinyin);
     }
 }
