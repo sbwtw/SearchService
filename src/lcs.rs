@@ -2,19 +2,13 @@
 use std::cmp::max;
 
 pub fn lcs(s1: &Vec<char>, s2: &Vec<char>) -> Vec<usize> {
-    // let s1 = s1.as_ref().as_bytes();
-    // let s2 = s2.as_ref().as_bytes();
     let len1 = s1.len();
     let len2 = s2.len();
 
     let mut data: Vec<Vec<usize>> = Vec::with_capacity(len1);
-    for _ in 0..len1 {
-        let mut inner = Vec::with_capacity(len2);
-        for _ in 0..len2 {
-            inner.push(0);
-        }
-        data.push(inner);
-    }
+    let mut inner = Vec::with_capacity(len2);
+    for _ in 0..len2 { inner.push(0); }
+    for _ in 0..len1 { data.push(inner.clone()); }
 
     for i in 0..len1 {
         for j in 0..len2 {
