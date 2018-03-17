@@ -2,8 +2,16 @@
 name = "search_service"
 version = "0.1.0"
 authors = ["石博文 <sbw@sbw.so>"]
+build = "src/build.rs"
+
+[lib]
+name = "search_service"
+path = "src/lib.rs"
+crate-type = ["dylib"]
+
+[build-dependencies]
+cbindgen = "*"
 
 [dependencies]
-# dbus = "*"
 dbus = { git = "https://github.com/diwic/dbus-rs" }
 pinyin = "*"

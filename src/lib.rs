@@ -1,10 +1,10 @@
+
 extern crate dbus;
 extern crate pinyin;
 
 mod dbus_service;
 mod search_context;
 mod lcs;
+pub mod ffi;
 
-fn main() {
-    dbus_service::start_service();
-}
+pub use ffi::*;

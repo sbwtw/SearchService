@@ -62,8 +62,6 @@ impl SearchContext {
         self.context_chars = self.context.chars().collect();
         self.pinyin_context = pinyin(context.as_ref(), &Args::new());
         self.has_pinyin = self.pinyin_context.iter().any(|x| !x.is_empty());
-
-        println!("{}\n{:?}", self.context, self.pinyin_context);
     }
 
     pub fn search<T: AsRef<str>>(&self, pattern: T) -> Option<usize> {
@@ -84,8 +82,6 @@ impl SearchContext {
 
     pub fn fuzzy_search<T: AsRef<str>>(&self, pattern: T) -> Vec<usize> {
         let text: Vec<char> = pattern.as_ref().chars().collect();
-
-        println!("{:?}", text);
 
         self.lcs_context(&text)
     }
